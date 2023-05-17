@@ -32,15 +32,24 @@ examples = list(zip(list(df["lemme"]), list(df["Word"])))
 loaded_vectors = KeyedVectors.load('eur_vectors.kv')
 fasttext_examples = [(loaded_vectors.get_vector(lemma), find_class(get_feminine_word(lemma, examples))) for lemma in loaded_vectors.key_to_index.keys()]
 
-#load FRCOWS(2.5m) vectors
-def vec( word):
+def vec(data, word_to_idx, word):
     return numpy.array(data[word_to_idx[word]], dtype=numpy.float32)
-own_model = torch.load("./model499.pth", map_location=torch.device('cpu'))
-idx_to_word = own_model["idx_to_word"]
-word_to_idx = own_model["word_to_idx"]
-data = own_model["cbow_state_dict"]
-data = data["embeddings.weight"].data
-own_examples = [(vec(lemme), find_class(word)) for lemme, word in examples if lemme in idx_to_word]
+
+#load FRCOWS(2.5m) vectors
+own_model_thin = torch.load("./model106.pth", map_location=torch.device('cpu'))
+idx_to_word_thin = own_model_thin["idx_to_word"]
+word_to_idx_thin = own_model_thin["word_to_idx"]
+data_thin = own_model_thin["cbow_state_dict"]
+data_thin = data_thin["embeddings.weight"].data
+own_examples_thin = [(vec(data_thin, word_to_idx_thin, lemme), find_class(word)) for lemme, word in examples if lemme in idx_to_word_thin]
+
+#load FRCOWS(500m) vectors
+own_model_thick = torch.load("./model4.pth", map_location=torch.device('cpu'))
+idx_to_word_thick = own_model_thick["idx_to_word"]
+data_thick = own_model_thick["cbow_state_dict"]
+word_to_idx_thick = own_model_thick["word_to_idx"]
+data_thick = data_thick["embeddings.weight"].data
+own_examples_thick = [(vec(data_thick, word_to_idx_thick, lemme), find_class(word)) for lemme, word in examples if lemme in idx_to_word_thick]
 
 
 
@@ -51,7 +60,7 @@ def load_frcows(path):
         lines = file.readlines()
         for e in lines:
             token = e.split(" ")[0]
-            token = token[0:token.rfind("_")] #comment line after saving the file
+            # token = token[0:token.rfind("_")] #comment line after saving the file
             embedding = numpy.array(e.split(" ")[1:], dtype=numpy.float32)
             embeddings[token] = embedding
     return embeddings
@@ -82,12 +91,20 @@ print("\tlen:",len(frcows_examples))
 print("\tfirst sample:", frcows_examples[0])
 
 print("frcow2_5m:")
-print("\ttype:", type(own_examples))
-print("\t\ttype elt [0]:", type(own_examples[0]))
-print("\t\t\ttype elt [0][0]", type(own_examples[0][0]))
-print("\t\t\ttype elt [0][1]", type(own_examples[0][1]))
-print("\tlen:",len(own_examples))
-print("\tfirst sample:", own_examples[0])
+print("\ttype:", type(own_examples_thin))
+print("\t\ttype elt [0]:", type(own_examples_thin[0]))
+print("\t\t\ttype elt [0][0]", type(own_examples_thin[0][0]))
+print("\t\t\ttype elt [0][1]", type(own_examples_thin[0][1]))
+print("\tlen:",len(own_examples_thin))
+print("\tfirst sample:", own_examples_thin[0])
+
+print("frcow500m:")
+print("\ttype:", type(own_examples_thick))
+print("\t\ttype elt [0]:", type(own_examples_thick[0]))
+print("\t\t\ttype elt [0][0]", type(own_examples_thick[0][0]))
+print("\t\t\ttype elt [0][1]", type(own_examples_thick[0][1]))
+print("\tlen:",len(own_examples_thick))
+print("\tfirst sample:", own_examples_thick[0])
 
 print("fasttext:")
 print("\ttype:", type(fasttext_examples))
